@@ -1,0 +1,17 @@
+# Sweep configuration for VNGE lambda hyperparameter
+# Tests different regularization strengths
+seed: 42
+steps: 500
+batch_size: 8
+max_length: 128
+max_tokens: 512
+learning_rate: 3.0e-4
+dataset_name: wikitext
+dataset_config: wikitext-2-raw-v1
+tokenizer_name: gpt2
+vnge_window: 8
+vnge_probes: 4
+vnge_cheb_order: 8
+
+# Lambda sweep values: baseline (0.0) and increasing regularization
+lambda_vnge_values: [0.0, 0.01, 0.05, 0.1, 0.2, 0.5]

@@ -3,7 +3,7 @@ from typing import Tuple
 
 import torch
 
-from aeterna.graphs.laplacian_ops import laplacian_trace, normalized_laplacian_matvec
+from aeterna.graphs.laplacian_ops import normalized_laplacian_matvec
 from aeterna.graphs.sparse_graph import build_local_window_graph
 
 
@@ -51,7 +51,8 @@ def vnge_hutchinson(
         return torch.tensor(0.0, device=adj.device)
     if not adj.is_sparse:
         raise ValueError("Adjacency must be sparse")
-    trace_l = laplacian_trace(adj) + eps
+    # Use direct computation as specified: trace_l = n for normalized Laplacian
+    trace_l = torch.tensor(float(n), device=adj.device, dtype=adj.dtype) + eps
 
     def matvec_l(v):
         return normalized_laplacian_matvec(adj, v, eps=eps)
