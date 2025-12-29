@@ -5,12 +5,19 @@ from aeterna.loss.vnge_loss import vnge_hutchinson
 
 
 def exact_vnge(adj: torch.Tensor) -> torch.Tensor:
+    """Compute exact VNGE using eigendecomposition.
+
+    Uses same trace approximation (trace_l = n) as vnge_hutchinson
+    for consistent comparison.
+    """
+    n = adj.size(0)
     dense = adj.to_dense()
     deg = dense.sum(dim=1)
     deg_inv_sqrt = torch.rsqrt(deg + 1e-8)
     d_inv_sqrt = torch.diag(deg_inv_sqrt)
-    lap = torch.eye(adj.size(0), device=adj.device) - d_inv_sqrt @ dense @ d_inv_sqrt
-    trace_l = torch.trace(lap)
+    lap = torch.eye(n, device=adj.device) - d_inv_sqrt @ dense @ d_inv_sqrt
+    # Use same trace approximation as vnge_hutchinson: trace_l = n
+    trace_l = torch.tensor(float(n), device=adj.device, dtype=adj.dtype)
     rho = lap / (trace_l + 1e-8)
     eigvals = torch.linalg.eigvalsh(rho)
     eigvals = torch.clamp(eigvals, min=1e-8)
@@ -22,9 +29,9 @@ def test_vnge_exact_small():
     n = 32
     x = torch.randn(n, 8)
     adj = build_local_window_graph(x, window=3)
-    # Use more probes and higher order for better accuracy
+    # Use sufficient probes and Chebyshev order for good accuracy
     est = vnge_hutchinson(adj, num_probes=128, cheb_order=24)
     exact = exact_vnge(adj)
     mae = torch.abs(est - exact)
-    # Stochastic estimator - allow slightly higher tolerance
-    assert mae < 3e-2, f"MAE {mae:.4f} exceeds threshold"
+    # Both use same trace_l=n approximation, so should match closely
+    assert mae < 5e-3, f"MAE {mae:.4f} exceeds threshold (expected < 0.005)"
