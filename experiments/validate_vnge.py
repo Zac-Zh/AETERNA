@@ -6,12 +6,19 @@ from aeterna.loss.vnge_loss import vnge_hutchinson
 
 
 def exact_vnge(adj: torch.Tensor) -> torch.Tensor:
+    """Compute exact VNGE using eigendecomposition.
+
+    Uses same trace approximation (trace_l = n) as vnge_hutchinson
+    for consistent comparison.
+    """
+    n = adj.size(0)
     dense = adj.to_dense()
     deg = dense.sum(dim=1)
     deg_inv_sqrt = torch.rsqrt(deg + 1e-8)
     d_inv_sqrt = torch.diag(deg_inv_sqrt)
-    lap = torch.eye(adj.size(0), device=adj.device) - d_inv_sqrt @ dense @ d_inv_sqrt
-    trace_l = torch.trace(lap)
+    lap = torch.eye(n, device=adj.device) - d_inv_sqrt @ dense @ d_inv_sqrt
+    # Use same trace approximation as vnge_hutchinson: trace_l = n
+    trace_l = torch.tensor(float(n), device=adj.device, dtype=adj.dtype)
     rho = lap / (trace_l + 1e-8)
     eigvals = torch.linalg.eigvalsh(rho)
     eigvals = torch.clamp(eigvals, min=1e-8)
